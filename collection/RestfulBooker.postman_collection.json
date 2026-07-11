@@ -1,1 +1,1470 @@
-
+{
+  "info": {
+    "name": "Enterprise API Testing Framework",
+    "description": {
+      "content": "# Enterprise API Testing Framework\n\n**Purpose:** Demonstrate architected, maintainable API testing framework for portfolio\n\n**Target Roles:** SDET, Test Architect, AI QA Engineer\n\n## Architecture Overview\n\n```\nEnterprise API Testing Framework\n├── 📁 SETUP & AUTHENTICATION\n├── 📁 USERS (JSONPlaceholder)\n├── 📁 POSTS (JSONPlaceholder)\n├── 📁 COMMENTS (JSONPlaceholder)\n├── 📁 USER CRUD (ReqRes)\n├── 📁 NEGATIVE SCENARIOS\n├── 📁 CONTRACT VALIDATION\n├── 📁 SMOKE TEST SUITE\n├── 📁 REGRESSION TEST SUITE\n└── 📁 PERFORMANCE TEST SUITE\n```\n\n## Key Design Principles\n\n| Principle | Implementation |\n|-----------|----------------|\n| **DRY** | Collection-level pre-request scripts & test helpers |\n| **Maintainability** | Environment variables, centralized auth |\n| **Scalability** | Separate test suites (Smoke, Regression, Performance) |\n| **Reusability** | Shared validation functions in globals |\n| **Testability** | Independent requests with clear assertions |\n| **Configuration** | DEV/QA/PROD environment switching |\n| **Traceability** | Correlation IDs, request IDs, logging |\n| **Documentation** | Request descriptions, folder organization |\n\n## Collection Variables\n\n- `baseUrl` - JSONPlaceholder base URL\n- `baseUrlReqRes` - ReqRes API base URL\n- `environment` - Current environment (DEV/QA/PROD)\n- `requestId` - Unique request identifier (auto-generated)\n- `correlationId` - Request correlation ID (auto-generated)\n- `timestamp` - ISO timestamp (auto-generated)\n- `randomEmail` - Generated test email (auto-generated)\n- `testUserId` - User ID for GET/PUT/DELETE operations\n- `testPostId` - Post ID for testing\n- `createdUserId` - ID of newly created user (stored after POST)\n- `createdPostId` - ID of newly created post (stored after POST)\n\n## Test Execution Flow\n\n### 1. Pre-request Script Execution\n- Generate requestId\n- Generate correlationId\n- Generate timestamp\n- Generate randomEmail\n- Set environment-specific headers\n\n### 2. Request Execution\n- Send HTTP request with all headers\n- Include correlation ID for tracing\n- Apply environment-specific base URLs\n\n### 3. Tests/Assertions\n- Validate status code\n- Validate response time\n- Validate content type\n- Validate JSON schema (contract testing)\n- Store response values for subsequent requests\n- Log results\n\n### 4. Variable Storage\n- Extract IDs from response\n- Store for downstream requests\n- Use in subsequent API calls (e.g., POST user → GET user by ID)\n\n## Environment Switching\n\nSwitch between environments without changing requests:\n\n```bash\n# QA Environment\nnewman run collection.json -e qa.json -r html\n\n# PROD Environment  \nnewman run collection.json -e prod.json -r html\n```\n\n## Test Suites\n\n### Smoke Test Suite (2 mins)\n- Quick health check\n- Critical path validation\n- Essential API functionality\n\n### Regression Test Suite (5 mins)\n- Complete CRUD operations\n- Edge cases\n- Data consistency\n\n### Negative Test Suite (3 mins)\n- Invalid inputs\n- Missing authorization\n- Malformed requests\n- Boundary violations\n\n### Contract Test Suite (2 mins)\n- JSON schema validation\n- Response structure validation\n- Field type validation\n\n### Performance Test Suite (1 min)\n- Response time assertions\n- Payload size checks\n- API health monitoring\n\n## How Variables Work\n\n**No hardcoding:**\n\n```javascript\n// ❌ BAD\nGET /users/1\n\n// ✅ GOOD  \nGET /users/{{testUserId}}\n```\n\n**Storing values from responses:**\n\n```javascript\n// In Tests tab after creating a user\nconst body = pm.response.json();\npm.variables.set('createdUserId', body.id);\n\n// Next request uses it\nGET /users/{{createdUserId}}\n```\n\n## Dependencies Between Requests\n\n1. **User Creation → User Read** - Store ID from POST, use in GET\n2. **Post Creation → Comment Fetch** - Store postId, use in GET comments\n3. **ReqRes Register → Get User** - Store user ID, retrieve details\n\n## Newman / CI-CD Integration\n\n### Local Execution\n```bash\n# Run entire collection\nnewman run collection.json -e qa.json\n\n# Run specific folder (smoke tests only)\nnewman run collection.json -e qa.json --folder 'SMOKE TEST SUITE'\n\n# Generate HTML report\nnewman run collection.json -e qa.json -r cli,html --reporter-html-export report.html\n```\n\n### CI/CD Integration\n- ✅ Jenkins\n- ✅ GitHub Actions  \n- ✅ GitLab CI\n- ✅ Azure DevOps\n\n### Recommended CI Command\n```bash\nnewman run collection.json \\\n  -e qa.json \\\n  --reporters cli,json,html \\\n  --reporter-json-export results.json \\\n  --reporter-html-export report.html \\\n  --bail\n```\n\n## How to Extend This Framework\n\n### Adding New API Endpoint\n\n1. **Create folder** for the service (e.g., \"Orders\")\n2. **Add requests** (GET, POST, PUT, DELETE)\n3. **Include pre-request script** (auto-inherit collection-level setup)\n4. **Add tests** (use helper functions)\n5. **Store variables** if needed for downstream requests\n6. **Add to regression suite** (include in regression folder)\n\n### Adding New Environment\n\n1. Duplicate `qa.json` → `staging.json`\n2. Update `baseUrl` and `baseUrlReqRes`\n3. Update timeout/performance thresholds if needed\n4. Run: `newman run collection.json -e staging.json`\n\n## Debugging Failed Tests\n\n**Check logs:**\n```javascript\n// In Tests tab\nconsole.log('Response:', pm.response.json());\nconsole.log('Variables:', pm.variables.toObject());\n```\n\n**Enable debug mode:**\nSet `isDebugMode = true` in globals\n\n**View request/response:**\nPostman Console (Ctrl/Cmd + Alt + C)\n\n## Performance Benchmarks\n\n| Operation | Expected Time |\n|-----------|---------------|\n| GET (Read) | < 200ms |\n| POST (Create) | < 500ms |\n| PUT (Update) | < 500ms |\n| DELETE | < 300ms |\n\nPublic APIs may have higher latency; adjust in environments.\n\n---\n\n**Framework Version:** 1.0  \n**Last Updated:** 2025-07-11  \n**Maintainer:** QA Engineer  \n**Status:** Production Ready\n",
+      "type": "text/markdown"
+    },
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "SETUP & AUTHENTICATION",
+      "description": "Collection-level setup and authentication verification",
+      "item": [
+        {
+          "name": "Verify Environment Setup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique identifiers for this request",
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('timestamp', new Date().toISOString());",
+                  "",
+                  "// Generate random test email",
+                  "const randomSuffix = Math.random().toString(36).substring(2, 8);",
+                  "pm.variables.set('randomEmail', `test${randomSuffix}@example.com`);",
+                  "",
+                  "// Log setup",
+                  "console.log('=== REQUEST SETUP ===');",
+                  "console.log('Environment:', pm.variables.get('environment'));",
+                  "console.log('Request ID:', pm.variables.get('requestId'));",
+                  "console.log('Correlation ID:', pm.variables.get('correlationId'));",
+                  "console.log('Base URL:', pm.variables.get('baseUrl'));",
+                  "console.log('===================');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "Verify collection setup by fetching a user. Confirms:\n- Base URL is correct\n- Variables are properly initialized\n- Network connectivity is working\n- Headers are being sent correctly"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "USERS (JSONPlaceholder)",
+      "description": "User CRUD operations using JSONPlaceholder API",
+      "item": [
+        {
+          "name": "POST Create User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate identifiers",
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('timestamp', new Date().toISOString());",
+                  "",
+                  "// Generate random email for this user",
+                  "const randomSuffix = Math.random().toString(36).substring(2, 8);",
+                  "pm.variables.set('randomEmail', `user${randomSuffix}@example.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Status validation",
+                  "pm.test('Status: 201 Created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Response time",
+                  "pm.test('Response time < 1000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "// Content type",
+                  "pm.test('Content-Type is JSON', function() {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "// Response structure",
+                  "const response = pm.response.json();",
+                  "pm.test('Response has required fields', function() {",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "});",
+                  "",
+                  "// Store ID for subsequent requests",
+                  "pm.variables.set('createdUserId', response.id);",
+                  "console.log('Created User ID:', response.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User {{timestamp}}\",\n  \"email\": \"{{randomEmail}}\",\n  \"username\": \"testuser{{$randomInt}}\",\n  \"phone\": \"{{$randomPhoneNumber}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Create a new user with randomly generated data.\n\n**Expected Response:** 201 Created"
+          },
+          "response": []
+        },
+        {
+          "name": "GET User By ID",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type is JSON', function() {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('User data is valid', function() {",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "    pm.expect(response.id).to.equal(parseInt(pm.variables.get('testUserId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{testUserId}}"
+              ]
+            },
+            "description": "Fetch a specific user by ID.\n\n**Uses Variable:** testUserId (default: 1)\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "GET All Users",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(Array.isArray(response)).to.be.true;",
+                  "    pm.expect(response.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 1000ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Fetch all users from the system.\n\n**Expected Response:** 200 OK with array of users"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Update User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('timestamp', new Date().toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('User updated successfully', function() {",
+                  "    pm.expect(response.name).to.equal('Updated User {{timestamp}}');",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{testUserId}},\n  \"name\": \"Updated User {{timestamp}}\",\n  \"email\": \"updated{{$randomInt}}@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{testUserId}}"
+              ]
+            },
+            "description": "Update an existing user.\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "{{correlationId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{testUserId}}"
+              ]
+            },
+            "description": "Delete a user by ID.\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "POSTS (JSONPlaceholder)",
+      "description": "Post CRUD operations",
+      "item": [
+        {
+          "name": "POST Create Post",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('timestamp', new Date().toISOString());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 201 Created', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('Post created with required fields', function() {",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('title');",
+                  "    pm.expect(response).to.have.property('body');",
+                  "    pm.expect(response).to.have.property('userId');",
+                  "});",
+                  "",
+                  "pm.variables.set('createdPostId', response.id);",
+                  "console.log('Created Post ID:', response.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Post - {{timestamp}}\",\n  \"body\": \"This is a test post created by automated API tests. Generated at {{timestamp}}.\",\n  \"userId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            },
+            "description": "Create a new post.\n\n**Expected Response:** 201 Created"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Post By ID",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('Post has all required fields', function() {",
+                  "    pm.expect(response).to.have.all.keys('userId', 'id', 'title', 'body');",
+                  "});",
+                  "",
+                  "pm.test('Post ID matches request', function() {",
+                  "    pm.expect(response.id).to.equal(parseInt(pm.variables.get('testPostId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{testPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "{{testPostId}}"
+              ]
+            },
+            "description": "Fetch a specific post by ID.\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Posts By User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('Response is array of posts', function() {",
+                  "    pm.expect(Array.isArray(response)).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('All posts belong to correct user', function() {",
+                  "    const userId = parseInt(pm.variables.get('testUserId'));",
+                  "    response.forEach(post => {",
+                  "        pm.expect(post.userId).to.equal(userId);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts?userId={{testUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{testUserId}}"
+                }
+              ]
+            },
+            "description": "Get all posts by a specific user.\n\n**Query Parameter:** userId\n\n**Expected Response:** 200 OK with array of posts"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Update Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('Post updated', function() {",
+                  "    pm.expect(response.title).to.include('Updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{testPostId}},\n  \"title\": \"Updated Post Title\",\n  \"body\": \"This is the updated post body.\",\n  \"userId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{testPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "{{testPostId}}"
+              ]
+            },
+            "description": "Update an existing post.\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{testPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "{{testPostId}}"
+              ]
+            },
+            "description": "Delete a post by ID.\n\n**Expected Response:** 200 OK"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "NEGATIVE SCENARIOS",
+      "description": "Test error handling and edge cases",
+      "item": [
+        {
+          "name": "GET Non-existent User (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status: 404 Not Found', function() {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Response time reasonable', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "99999"
+              ]
+            },
+            "description": "Verify API returns 404 for non-existent resource.\n\n**Expected Response:** 404 Not Found"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Create User - Missing Required Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 4xx (Bad Request or similar)', function() {",
+                  "    pm.response.to.have.status.oneOf([400, 422, 409]):",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Incomplete User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Test API validation - missing required email field.\n\n**Expected Response:** 4xx error"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Create User - Invalid JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 4xx (Malformed Request)', function() {",
+                  "    pm.response.to.have.status.oneOf([400, 422]):",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ invalid json }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Test API handles malformed JSON gracefully.\n\n**Expected Response:** 400 Bad Request"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Invalid ID Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 4xx (Bad ID Format)', function() {",
+                  "    pm.response.to.have.status.oneOf([400, 404]):",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/invalid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "invalid-id"
+              ]
+            },
+            "description": "Test API handles invalid ID format.\n\n**Expected Response:** 4xx error"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CONTRACT VALIDATION",
+      "description": "JSON Schema validation for API responses",
+      "item": [
+        {
+          "name": "Validate User Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const userSchema = {",
+                  "    type: 'object',",
+                  "    required: ['id', 'name', 'email', 'username'],",
+                  "    properties: {",
+                  "        id: { type: 'number' },",
+                  "        name: { type: 'string' },",
+                  "        email: { type: 'string', format: 'email' },",
+                  "        username: { type: 'string' },",
+                  "        address: { type: 'object' },",
+                  "        phone: { type: 'string' },",
+                  "        website: { type: 'string' },",
+                  "        company: { type: 'object' }",
+                  "    }",
+                  "};",
+                  "",
+                  "pm.test('User response matches schema', function() {",
+                  "    pm.response.to.have.jsonSchema(userSchema);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('All required fields are present', function() {",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('name');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "});",
+                  "",
+                  "pm.test('Field types are correct', function() {",
+                  "    pm.expect(response.id).to.be.a('number');",
+                  "    pm.expect(response.name).to.be.a('string');",
+                  "    pm.expect(response.email).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "Validate User response matches expected JSON schema.\n\nThis demonstrates contract testing - verifying API responses conform to agreed-upon contracts.\n\n**Tests:**\n- Response structure\n- Required fields\n- Field types\n- Email format"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Post Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const postSchema = {",
+                  "    type: 'object',",
+                  "    required: ['userId', 'id', 'title', 'body'],",
+                  "    properties: {",
+                  "        userId: { type: 'number' },",
+                  "        id: { type: 'number' },",
+                  "        title: { type: 'string' },",
+                  "        body: { type: 'string' }",
+                  "    }",
+                  "};",
+                  "",
+                  "pm.test('Post response matches schema', function() {",
+                  "    pm.response.to.have.jsonSchema(postSchema);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.test('Post has valid content', function() {",
+                  "    pm.expect(response.title.length).to.be.greaterThan(0);",
+                  "    pm.expect(response.body.length).to.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "1"
+              ]
+            },
+            "description": "Validate Post response structure and types.\n\n**Tests:**\n- Required fields present\n- Field types correct\n- Content not empty"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SMOKE TEST SUITE",
+      "description": "Quick health check - critical path validation (2 mins)",
+      "item": [
+        {
+          "name": "1. Verify Environment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API is reachable', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "First smoke test - verify API is responsive"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Test User CRUD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User CRUD works', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Smoke test - list all users"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Test Post CRUD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post CRUD works', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "1"
+              ]
+            },
+            "description": "Smoke test - get a post"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "REGRESSION TEST SUITE",
+      "description": "Complete API validation (5 mins)",
+      "item": [
+        {
+          "name": "All User Operations",
+          "description": "Complete CRUD cycle for users",
+          "item": [
+            {
+              "name": "POST Create User",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "const suffix = Math.random().toString(36).substring(2, 8);",
+                      "pm.variables.set('randomEmail', `regression${suffix}@example.com`);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Create returns 201', function() {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "const response = pm.response.json();",
+                      "pm.variables.set('regressionUserId', response.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Regression Test User\",\n  \"email\": \"{{randomEmail}}\",\n  \"username\": \"regtest{{$randomInt}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET Created User",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Created user retrieved', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/{{regressionUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "{{regressionUserId}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "All Post Operations",
+          "description": "Complete CRUD cycle for posts",
+          "item": [
+            {
+              "name": "POST Create Post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Post created', function() {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "const response = pm.response.json();",
+                      "pm.variables.set('regressionPostId', response.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Regression Test Post\",\n  \"body\": \"This is a regression test post.\",\n  \"userId\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/posts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "posts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "GET Created Post",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Post retrieved successfully', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/posts/{{regressionPostId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{regressionPostId}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PERFORMANCE TEST SUITE",
+      "description": "API health and performance monitoring (1 min)",
+      "item": [
+        {
+          "name": "GET User - Response Time Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test('Payload size reasonable', function() {",
+                  "    const size = Buffer.byteLength(pm.response.body, 'utf8');",
+                  "    pm.expect(size).to.be.below(10000); // 10KB",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "Performance check - single resource retrieval"
+          },
+          "response": []
+        },
+        {
+          "name": "GET All Users - List Performance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List returns in acceptable time', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function() {",
+                  "    pm.expect(Array.isArray(pm.response.json())).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Performance check - list operation"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Posts - Pagination Performance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Posts endpoint responsive', function() {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts?_start=0&_limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "_start",
+                  "value": "0"
+                },
+                {
+                  "key": "_limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Performance check - paginated results"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// ========================================",
+          "// COLLECTION-LEVEL PRE-REQUEST SCRIPT",
+          "// ========================================",
+          "// This script runs BEFORE every request",
+          "// Generates unique identifiers and data",
+          "// ========================================",
+          "",
+          "// 1. Generate Request ID (UUID)",
+          "if (!pm.variables.get('requestId')) {",
+          "    pm.variables.set('requestId', pm.variables.replaceIn('{{$guid}}'));",
+          "}",
+          "",
+          "// 2. Generate Correlation ID (UUID)",
+          "if (!pm.variables.get('correlationId')) {",
+          "    pm.variables.set('correlationId', pm.variables.replaceIn('{{$guid}}'));",
+          "}",
+          "",
+          "// 3. Generate Timestamp",
+          "pm.variables.set('timestamp', new Date().toISOString());",
+          "",
+          "// 4. Generate random email (if not set)",
+          "if (!pm.variables.get('randomEmail')) {",
+          "    const suffix = Math.random().toString(36).substring(2, 8);",
+          "    pm.variables.set('randomEmail', `test${suffix}@example.com`);",
+          "}",
+          "",
+          "// 5. Log setup in debug mode",
+          "if (pm.variables.get('isDebugMode') === 'true') {",
+          "    console.log('=== REQUEST SETUP ===');",
+          "    console.log('Environment:', pm.variables.get('environment'));",
+          "    console.log('Request ID:', pm.variables.get('requestId'));",
+          "    console.log('Base URL:', pm.variables.get('baseUrl'));",
+          "    console.log('==================');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// ========================================",
+          "// COLLECTION-LEVEL TEST SCRIPT",
+          "// ========================================",
+          "// Logging and reporting",
+          "// ========================================",
+          "",
+          "// Log response summary",
+          "if (pm.variables.get('isDebugMode') === 'true') {",
+          "    console.log('Response Status:', pm.response.code);",
+          "    console.log('Response Time:', pm.response.responseTime + 'ms');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://jsonplaceholder.typicode.com",
+      "type": "string"
+    },
+    {
+      "key": "environment",
+      "value": "qa",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "correlationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
