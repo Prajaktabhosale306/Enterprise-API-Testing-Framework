@@ -1,0 +1,114 @@
+{
+  "_postman_variable_scope": "globals",
+  "_postman_exported_at": "2025-07-11T00:00:00.000Z",
+  "_postman_exported_using": "Postman/11.0.0",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://jsonplaceholder.typicode.com",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "baseUrlReqRes",
+      "value": "https://reqres.in/api",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "environment",
+      "value": "qa",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "requestId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "correlationId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "randomEmail",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "randomUUID",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "testUserId",
+      "value": "1",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "testPostId",
+      "value": "1",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "testCommentId",
+      "value": "1",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "createdUserId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "createdPostId",
+      "value": "",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "maxResponseTime",
+      "value": "1000",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "testSuite",
+      "value": "smoke",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "logLevel",
+      "value": "INFO",
+      "type": "string",
+      "enabled": true
+    },
+    {
+      "key": "isDebugMode",
+      "value": "false",
+      "type": "boolean",
+      "enabled": true
+    }
+  ],
+  "_postman_exported_using_postman_app": "11.0.0",
+  "_postman_previewlanguage": "",
+  "description": {
+    "content": "# Global Variables & Shared Scripts\n\n## Purpose\nThis globals file contains:\n1. **Global Variables** - Shared across all requests\n2. **Helper Functions** - Reusable test assertions\n3. **Data Generators** - Random data creation\n4. **Logging Utilities** - Debug and trace execution\n\n## Usage\nImport this as globals in Postman:\nSettings > Export > Choose this file\n\n## Helper Functions (Use in Tests Tab)\n\n### validateStatus(code)\nValidate HTTP status code\n```javascript\nvalidateStatus(200)\n```\n\n### responseTime(maxMs)\nAssert response time < maxMs\n```javascript\nresponseTime(1000)\n```\n\n### validateContentType(expected)\nValidate response content type\n```javascript\nvalidateContentType('application/json')\n```\n\n### validateJsonSchema(schema)\nValidate response against JSON schema\n```javascript\nvalidateJsonSchema(userSchema)\n```\n\n### logRequest()\nLog current request details\n```javascript\nlogRequest()\n```\n\n### logResponse()\nLog response body and headers\n```javascript\nlogResponse()\n```\n\n## Data Generators (Use in Pre-request Script)\n\n### generateRequestId()\nGenerate UUID for tracking\n```javascript\npm.variables.set('requestId', generateRequestId())\n```\n\n### generateCorrelationId()\nGenerate correlation ID for tracing\n```javascript\npm.variables.set('correlationId', generateCorrelationId())\n```\n\n### generateRandomEmail()\nGenerate unique test email\n```javascript\npm.variables.set('randomEmail', generateRandomEmail())\n```\n\n### getCurrentTimestamp()\nGet ISO timestamp\n```javascript\npm.variables.set('timestamp', getCurrentTimestamp())\n```\n\n---\n\n## Collection Pre-request Setup\n\nEvery request automatically inherits:\n- requestId (UUID)\n- correlationId (UUID)\n- timestamp (ISO 8601)\n- randomEmail (test@example-XXXX.com)\n\nNo manual setup needed!\n"
+  }
+}
