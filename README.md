@@ -910,13 +910,11 @@ This framework is provided as-is for portfolio purposes.
 
 ## 👤 Author
 
-**Your Name** - SDET / Test Architect
+**Prajakta Bhosale** - SDET
 
-- 📧 Email: your@email.com
-- 💼 LinkedIn: linkedin.com/in/yourprofile
-- 🐙 GitHub: github.com/yourprofile
-- 🔗 Portfolio: yourportfolio.com
-
+- 📧 Email: prajaktabhosale306@email.com
+- 💼 LinkedIn: linkedin.com/in/prajakta-b-bhosale
+- 🐙 GitHub: https://github.com/Prajaktabhosale306
 ---
 
 ## 📝 Version History
@@ -978,9 +976,6 @@ For **SDET / Test Architect** interviews:
 - SRP (Single Responsibility)
 - Reusable components
 - Maintainability first
-
-**This is what separates "I know Postman" from "I can architect enterprise test frameworks."**
-
 ---
 
 **Last Updated:** 2025-07-11  
